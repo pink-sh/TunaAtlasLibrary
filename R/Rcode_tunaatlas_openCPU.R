@@ -1,4 +1,4 @@
-plotQuantitiesByTonnes <- function(species=c(), start=1946, end=2014, chart="Bar")  {
+plotQuantitiesInTonnesByCountry <- function(species=c(), start=1946, end=2014, chart="Bar")  {
   library (DBI)
   library ("RPostgreSQL")
   library(rCharts)
