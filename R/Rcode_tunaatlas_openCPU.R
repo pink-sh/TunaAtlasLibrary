@@ -108,7 +108,7 @@ getSpecies <- function() {
   INNER JOIN species.species ON (tc.id_species_standard=species.id_species)
   INNER JOIN species.species_asfis ON (species.codesource_species=species_asfis.x3a_code)
   INNER JOIN area.rfmos_convention_areas_fao ON (rfmos_convention_areas_fao.id_origin_institution=tc.id_ocean)
-  WHERE year<=2014 AND id_catchunit IN (1,3)"
+  WHERE year<=2014 AND id_catchunit IN (1,3) AND v_catch > 0"
 
   drv <- dbDriver("PostgreSQL")
   con_sardara <- dbConnect(drv, user = "invsardara",password="fle087",dbname="sardara_world",host ="db-tuna.d4science.org",port=5432)
@@ -142,7 +142,7 @@ plotQuantitiesInTonnes <- function(species=c(), start=1946, end=2014, chart="Bar
   if (speciesList != "") {
     whereConditions <- paste0(whereConditions," AND ", " species.codesource_species IN (", speciesList, ") ")
   }
-  whereConditions <- paste0(whereConditions," AND ", " id_catchunit IN (1,3) ")
+  whereConditions <- paste0(whereConditions," AND ", " id_catchunit IN (1,3) AND v_catch > 0 ")
 
   query <- "SELECT
   english_name_ocean as ASD,
@@ -180,9 +180,6 @@ plotQuantitiesInTonnes <- function(species=c(), start=1946, end=2014, chart="Bar
   con_sardara <- dbConnect(drv, user = "invsardara",password="fle087",dbname="sardara_world",host ="db-tuna.d4science.org",port=5432)
 
   tuna <- dbGetQuery(con_sardara, query)
-
-  print (tuna)
-
   colnames(tuna)<-c("ASD","SeasonYear","SeasonMonthNr","SeasonMonth","MonthNm","GearCode","Gear","TargetSpeciesCode","ScientificName","ScientificFamilyName","CatchWeightT","Species","SpeciesCode","CountryCode","Country")
 
   #myCsv <- getURL(file)
