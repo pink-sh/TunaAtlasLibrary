@@ -1,4 +1,4 @@
-plotQuantitiesByTonnes <- function(species=c(), start=1946, end=2014)  {
+plotQuantitiesByTonnes <- function(species=c(), start=1946, end=2014, chart="Bar")  {
   library (DBI)
   library ("RPostgreSQL")
   library(rCharts)
@@ -68,7 +68,7 @@ plotQuantitiesByTonnes <- function(species=c(), start=1946, end=2014)  {
   aggr03 <- aggregate(aggr02$CatchWeightT, by=list(Country=aggr02$Country), FUN=sum)
   aggr04 <- transform(aggr03, CatchWeightT = as.numeric(x))
   aggr04$x <- NULL
-  m1 <- mPlot(x = "Country", y = "CatchWeightT", data = aggr04, stacked = "TRUE", xLabelAngle = 85)
+  m1 <- mPlot(x = "Country", y = "CatchWeightT", type = chart, data = aggr04, stacked = "TRUE", xLabelAngle = 85)
   m1$save('output.html', standalone = TRUE)
   return (toJSON(aggr04))
 }
