@@ -122,7 +122,7 @@ getSpecies <- function() {
   return (toJSON(ret))
 }
 
-plotQuantitiesInTonnes <- function(species=c(), start=1946, end=2016, chart="Bar") {
+plotQuantitiesInTonnes <- function(species=c(), start=1946, end=2014, chart="Bar") {
   library (DBI)
   library ("RPostgreSQL")
   library(rCharts)
