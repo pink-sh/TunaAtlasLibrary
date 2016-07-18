@@ -187,7 +187,7 @@ plotQuantitiesInTonnes <- function(species=c(), polygons=c(), start=1946, end=20
   
   query <- paste0(query, whereConditions)
   
-  print(query)
+  #print(query)
   
   drv <- dbDriver("PostgreSQL")
   con_sardara <- dbConnect(drv, user = "invsardara",password="fle087",dbname="sardara_world",host ="db-tuna.d4science.org",port=5432)
@@ -197,7 +197,8 @@ plotQuantitiesInTonnes <- function(species=c(), polygons=c(), start=1946, end=20
 
   poly <- count(data.frame(matrix(unlist(tuna$polygons), byrow=T)))
   names(poly)[1] <- "polygons"
-  print (polygons)
+  print (poly)
+  print(paste0("---------------------------"))
   tuna <- subset(tuna, select = -c(polygons) )
   colnames(tuna)<-c("ASD","SeasonYear","SeasonMonthNr","SeasonMonth","MonthNm","GearCode","Gear","TargetSpeciesCode","ScientificName","ScientificFamilyName","CatchWeightT","Species","SpeciesCode","CountryCode","Country")
   
