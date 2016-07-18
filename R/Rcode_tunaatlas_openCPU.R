@@ -196,17 +196,8 @@ plotQuantitiesInTonnes <- function(species=c(), polygons=c(), start=1946, end=20
   tuna <- dbGetQuery(con_sardara, query)
   dbDisconnect(con_sardara)
 
-  print(paste0("---------------------------"))
-  print(class(tuna))
-  print(class(unlist(tuna$polygons)))
-  print(class(matrix(unlist(tuna$polygons), byrow=T)))
-  print(data.frame(matrix(unlist(tuna$polygons), byrow=T)))
-  print(paste0("---------------------------------------------------------------------------------"))
   poly <- count(data.frame(matrix(unlist(tuna$polygons), byrow=T)))
-  print(class(poly))
   names(poly)[1] <- "polygons"
-  print (poly)
-  print(paste0("---------------------------"))
   tuna <- subset(tuna, select = -c(polygons) )
   colnames(tuna)<-c("ASD","SeasonYear","SeasonMonthNr","SeasonMonth","MonthNm","GearCode","Gear","TargetSpeciesCode","ScientificName","ScientificFamilyName","CatchWeightT","Species","SpeciesCode","CountryCode","Country")
   
