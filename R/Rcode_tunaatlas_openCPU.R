@@ -262,6 +262,6 @@ plotQuantitiesInTonnes <- function(species=c(), polygons=c(), start=1946, end=20
          ret.push(tuples[i][0].replace('.', ' ') + ':' + tuples[i][1]);
          }
          return ret.join('<br />'); } !#")
-  m1$save('output.html')
+  m1$save('output.html', standalone = TRUE)
   return (toJSON(OUT))
 }
