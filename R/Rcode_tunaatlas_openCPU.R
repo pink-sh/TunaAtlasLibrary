@@ -125,6 +125,7 @@ plotQuantitiesInTonnes <- function(species=c(), polygons=c(), start=1946, end=20
   library ("RPostgreSQL")
   library(rCharts)
   library(dplyr)
+  library(plyr)
   library(jsonlite)
   
   speciesList <- ""
