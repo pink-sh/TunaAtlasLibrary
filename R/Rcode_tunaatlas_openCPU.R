@@ -270,5 +270,5 @@ plotQuantitiesInTonnes <- function(species=c(), polygons=c(), start=1946, end=20
          }
          return ret.join('<br />'); } !#")
   m1$save('output.html', standalone = TRUE)
-  return (toJSON(list(OUT, poly)))
+  return (toJSON(list(OUT, poly), pretty = TRUE))
 }
