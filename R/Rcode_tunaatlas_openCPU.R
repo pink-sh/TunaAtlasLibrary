@@ -199,7 +199,7 @@ plotQuantitiesInTonnes <- function(species=c(), polygons=c(), start=1946, end=20
   print(class(tuna))
   print(class(unlist(tuna$polygons)))
   print(class(matrix(unlist(tuna$polygons), byrow=T)))
-  print(matrix(unlist(tuna$polygons), byrow=T))
+  print(data.frame(matrix(unlist(tuna$polygons), byrow=T)))
   print(paste0("---------------------------------------------------------------------------------"))
   poly <- count(data.frame(matrix(unlist(tuna$polygons), byrow=T)))
   print(class(poly))
