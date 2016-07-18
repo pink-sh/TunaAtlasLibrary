@@ -120,6 +120,7 @@ getSpecies <- function() {
 }
 
 plotQuantitiesInTonnes <- function(species=c(), polygons=c(), start=1946, end=2014, chart="Bar") {
+  vector.is.empty <- function(x) return(length(x) ==0 )
   library (DBI)
   library ("RPostgreSQL")
   library(rCharts)
