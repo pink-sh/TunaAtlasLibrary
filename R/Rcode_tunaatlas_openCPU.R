@@ -169,7 +169,8 @@ plotQuantitiesInTonnes <- function(species=c(), polygons=c(), start=1946, end=20
   scientific_name || ' - ' || species.codesource_species as Species,
   species.codesource_species as TargetSpeciesCode,
   codesource_flag as CountryCode,
-  english_name_flag as Country
+  english_name_flag as Country,
+	ST_AsText(AWG.geom) as polygons
   
   from tunaatlas.catches tc
   
@@ -192,6 +193,12 @@ plotQuantitiesInTonnes <- function(species=c(), polygons=c(), start=1946, end=20
   con_sardara <- dbConnect(drv, user = "invsardara",password="fle087",dbname="sardara_world",host ="db-tuna.d4science.org",port=5432)
   
   tuna <- dbGetQuery(con_sardara, query)
+  dbDisconnect(con_sardara)
+
+  poly <- count(data.frame(matrix(unlist(tuna$polygons), byrow=T)))
+  names(poly)[1] <- "polygons"
+  print (polygons)
+  tuna <- subset(tuna, select = -c(polygons) )
   colnames(tuna)<-c("ASD","SeasonYear","SeasonMonthNr","SeasonMonth","MonthNm","GearCode","Gear","TargetSpeciesCode","ScientificName","ScientificFamilyName","CatchWeightT","Species","SpeciesCode","CountryCode","Country")
   
   #myCsv <- getURL(file)
@@ -263,5 +270,5 @@ plotQuantitiesInTonnes <- function(species=c(), polygons=c(), start=1946, end=20
          }
          return ret.join('<br />'); } !#")
   m1$save('output.html', standalone = TRUE)
-  return (toJSON(OUT))
+  return (toJSON(list(OUT, poly)))
 }
