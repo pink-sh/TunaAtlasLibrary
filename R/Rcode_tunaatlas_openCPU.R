@@ -144,7 +144,7 @@ plotQuantitiesInTonnes <- function(species=c(), polygons=c(), start=1946, end=20
   whereConditions <- paste0(whereConditions," AND ", " id_catchunit IN (1,3) AND v_catch > 0 ")
   
   if (!vector.is.empty(polygons)) {
-    whereConditions <- paste0(whereConditions," AND ST_IsValid(AWG.geom) AND (")
+    whereConditions <- paste0(whereConditions," AND ST_IsValid(AWG.geom) AND CWP.size_grid = 5 AND (")
     polygonList <- "";
     for (polygon in polygons) {
       polygonList <- paste0(polygonList, "ST_Intersects(ST_SetSRID(AWG.geom, 4326) ,ST_SetSRID(ST_GeomFromText('MULTIPOLYGON(((", polygon, ")))'), 4326)) OR ")
@@ -175,7 +175,6 @@ plotQuantitiesInTonnes <- function(species=c(), polygons=c(), start=1946, end=20
   
   from tunaatlas.catches tc
   
-  INNER JOIN area.area USING (id_area)
   INNER JOIN time.time USING (id_time)
   INNER JOIN gear.gear_labels ON (tc.id_geargroup_tunaatlas=gear_labels.id_gear)
   INNER JOIN flag.flag_labels ON (tc.id_flag_standard=flag_labels.id_flag)
@@ -184,6 +183,8 @@ plotQuantitiesInTonnes <- function(species=c(), polygons=c(), start=1946, end=20
   INNER JOIN species.species_asfis ON (species.codesource_species=species_asfis.x3a_code)
   INNER JOIN area.rfmos_convention_areas_fao ON (rfmos_convention_areas_fao.id_origin_institution=tc.id_ocean)
   INNER JOIN area.areas_with_geom AWG ON (tc.id_area = AWG.id_area)
+  INNER JOIN area.area AREA ON (AREA.id_area = AWG.id_area)
+  INNER JOIN area.cwp_grid CWP ON (CWP.gridcode_cwp = AREA.codesource_area)
   WHERE "
   
   query <- paste0(query, whereConditions)
