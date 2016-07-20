@@ -195,6 +195,10 @@ plotQuantitiesInTonnes <- function(species=c(), polygons=c(), start=1946, end=20
   
   tuna <- dbGetQuery(con_sardara, query)
   dbDisconnect(con_sardara)
+  
+  if (is.data.frame(tuna) && nrow(tuna)==0) {
+    return (toJSON(tuna))
+  }
 
   poly <- count(data.frame(matrix(unlist(tuna$polygons), byrow=T)))
   names(poly)[1] <- "polygons"
