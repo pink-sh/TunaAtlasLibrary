@@ -276,3 +276,95 @@ plotQuantitiesInTonnes <- function(species=c(), polygons=c(), start=1946, end=20
   m1$save('output.html', standalone = TRUE)
   return (toJSON(list(OUT, poly), pretty = TRUE))
 }
+
+getCatchForSpeciesOnTimeFrame <- function(species=c(), polygons=c(), start=1946, end=2014) {
+  vector.is.empty <- function(x) return(length(x) ==0 )
+  library (DBI)
+  library ("RPostgreSQL")
+  library(dplyr)
+  library(plyr)
+  library(jsonlite)
+  
+  speciesList <- ""
+  for (sp in species) {
+    speciesList <- paste0(speciesList, "'", sp, "'", ',')
+  }
+  speciesList <- substr(speciesList, 1, nchar(speciesList)-1)
+  
+  whereConditions <- ""
+  whereConditions <- paste0(whereConditions," year <= ", end, " ")
+  whereConditions <- paste0(whereConditions," AND ", " year >= ", start, " ")
+  
+  if (speciesList != "") {
+    whereConditions <- paste0(whereConditions," AND ", " species.codesource_species IN (", speciesList, ") ")
+  }
+  whereConditions <- paste0(whereConditions," AND ", " id_catchunit IN (1,3) AND v_catch > 0 ")
+  
+  if (!vector.is.empty(polygons)) {
+    whereConditions <- paste0(whereConditions," AND ST_IsValid(AWG.geom) AND (")
+    polygonList <- "";
+    for (polygon in polygons) {
+      polygonList <- paste0(polygonList, "ST_Intersects(ST_SetSRID(AWG.geom, 4326) ,ST_SetSRID(ST_GeomFromText('MULTIPOLYGON(((", polygon, ")))'), 4326)) OR ")
+    }
+    polygonList <- substr(polygonList,1,nchar(polygonList)-3)
+    print (polygonList)
+    whereConditions <- paste0(whereConditions, polygonList, ")")
+  }
+  
+  query <- "SELECT
+  english_name_ocean as ASD,
+  year as seasonYear,
+  month as SeasonMonthNr,
+  month || ' - ' || month_name as SeasonMonth,
+  month_name as MonthNm,
+  codesource_gear as GearCode,
+  english_name_gear as Gear,
+  species.codesource_species as SpeciesCode,
+  scientific_name as ScientificName,
+  
+  family as ScientificFamilyName,
+  v_catch as CatchWeight,
+  scientific_name || ' - ' || species.codesource_species as Species,
+  species.codesource_species as TargetSpeciesCode,
+  codesource_flag as CountryCode,
+  english_name_flag as Country,
+  ST_AsText(AWG.geom) as polygons
+  
+  from tunaatlas.catches tc
+  
+  INNER JOIN area.area USING (id_area)
+  INNER JOIN time.time USING (id_time)
+  INNER JOIN gear.gear_labels ON (tc.id_geargroup_tunaatlas=gear_labels.id_gear)
+  INNER JOIN flag.flag_labels ON (tc.id_flag_standard=flag_labels.id_flag)
+  INNER JOIN species.species_labels ON (tc.id_species_standard=species_labels.id_species)
+  INNER JOIN species.species ON (tc.id_species_standard=species.id_species)
+  INNER JOIN species.species_asfis ON (species.codesource_species=species_asfis.x3a_code)
+  INNER JOIN area.rfmos_convention_areas_fao ON (rfmos_convention_areas_fao.id_origin_institution=tc.id_ocean)
+  INNER JOIN area.areas_with_geom AWG ON (tc.id_area = AWG.id_area)
+  WHERE "
+  
+  query <- paste0(query, whereConditions)
+  
+  drv <- dbDriver("PostgreSQL")
+  con_sardara <- dbConnect(drv, user = "invsardara",password="fle087",dbname="sardara_world",host ="db-tuna.d4science.org",port=5432)
+  
+  tuna <- dbGetQuery(con_sardara, query)
+  dbDisconnect(con_sardara)
+  
+  colnames(tuna)<-c("ASD","SeasonYear","SeasonMonthNr","SeasonMonth","MonthNm","GearCode","Gear","TargetSpeciesCode","ScientificName","ScientificFamilyName","CatchWeightT","Species","SpeciesCode","CountryCode","Country")
+  
+  years <- sort(unique(tuna[['SeasonYear']], incomparables = FALSE))
+
+  res <- list()
+  for (year in years) {
+    singleYear <- tuna[tuna$SeasonYear == year, ]
+    months <- sort(unique(singleYear[['SeasonMonthNr']], incomparables = FALSE))
+    yearMonths <- list()
+    for (month in months) {
+      yearMonths[[month]] <- singleYear[singleYear$SeasonMonthNr == month, ]
+    }
+    res[[year]] <- yearMonths
+  }
+  
+  return (toJSON(list(res), pretty = TRUE))
+}
