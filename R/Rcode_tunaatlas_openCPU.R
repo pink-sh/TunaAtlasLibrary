@@ -351,20 +351,21 @@ getCatchForSpeciesOnTimeFrame <- function(species=c(), polygons=c(), start=1946,
   tuna <- dbGetQuery(con_sardara, query)
   dbDisconnect(con_sardara)
   
-  colnames(tuna)<-c("ASD","SeasonYear","SeasonMonthNr","SeasonMonth","MonthNm","GearCode","Gear","TargetSpeciesCode","ScientificName","ScientificFamilyName","CatchWeightT","Species","SpeciesCode","CountryCode","Country")
+  colnames(tuna)<-c("ASD","SeasonYear","SeasonMonthNr","SeasonMonth","MonthNm","GearCode","Gear","TargetSpeciesCode","ScientificName","ScientificFamilyName","CatchWeightT","Species","SpeciesCode","CountryCode","Country", "Polygon")
+  drops <- c("ASD","SeasonYear","SeasonMonthNr","SeasonMonth","MonthNm","GearCode","Gear","TargetSpeciesCode","ScientificName","ScientificFamilyName","Species","SpeciesCode","CountryCode","Country")
   
-  years <- sort(unique(tuna[['SeasonYear']], incomparables = FALSE))
+  yearsT <- sort(unique(tuna[['SeasonYear']], incomparables = FALSE))
 
   res <- list()
-  for (year in years) {
-    singleYear <- tuna[tuna$SeasonYear == year, ]
-    months <- sort(unique(singleYear[['SeasonMonthNr']], incomparables = FALSE))
-    yearMonths <- list()
-    for (month in months) {
-      yearMonths[[month]] <- singleYear[singleYear$SeasonMonthNr == month, ]
-    }
-    res[[year]] <- yearMonths
+
+  for (yearT in yearsT) {
+    t <- tuna[tuna$SeasonYear == yearT, ]
+    t <- t[ , !(names(t) %in% drops)]
+    t <- aggregate(t[,c("CatchWeightT")], by=list(t$Polygon), "sum")
+    t <- t[with(t, order(-x, Group.1)), ]
+    colnames(t)<-c("Polygon","CatchWeghtT")
+    res[[toString(yearT)]] <- t
   }
-  
-  return (toJSON(list(res), pretty = TRUE))
+  print(res)
+  print(toJSON(res, pretty = FALSE))
 }
