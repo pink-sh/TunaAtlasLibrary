@@ -351,6 +351,10 @@ getCatchForSpeciesOnTimeFrame <- function(species=c(), polygons=c(), start=1946,
   tuna <- dbGetQuery(con_sardara, query)
   dbDisconnect(con_sardara)
   
+  if (is.data.frame(tuna) && nrow(tuna)==0) {
+    return (toJSON(tuna))
+  }
+  
   colnames(tuna)<-c("ASD","SeasonYear","SeasonMonthNr","SeasonMonth","MonthNm","GearCode","Gear","TargetSpeciesCode","ScientificName","ScientificFamilyName","CatchWeightT","Species","SpeciesCode","CountryCode","Country", "Polygon")
   drops <- c("ASD","SeasonYear","SeasonMonthNr","SeasonMonth","MonthNm","GearCode","Gear","TargetSpeciesCode","ScientificName","ScientificFamilyName","Species","SpeciesCode","CountryCode","Country")
   
