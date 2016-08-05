@@ -366,6 +366,5 @@ getCatchForSpeciesOnTimeFrame <- function(species=c(), polygons=c(), start=1946,
     colnames(t)<-c("Polygon","CatchWeghtT")
     res[[toString(yearT)]] <- t
   }
-  print(res)
-  print(toJSON(res, pretty = FALSE))
+  return (toJSON(res, pretty = FALSE))
 }
