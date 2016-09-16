@@ -125,7 +125,7 @@ getSpeciesSimple <- function() {
   library(RCurl)
   library (DBI)
   library ("RPostgreSQL")
-  query <- "SELECT DISTINCT(species) AS name, species_scientific_name AS scientific_name
+  query <- "SELECT DISTINCT(species) AS name, species_scientific_name AS scientific_name, species_scientific_name AS id
 FROM tunaatlas_indicators.tunaatlas_catches_by_quadrant55_year_month_gear_species_flag WHERE species IS NOT NULL AND species != '' ORDER BY species"
   drv <- dbDriver("PostgreSQL")
   con_sardara <- dbConnect(drv, user = "invsardara",password="fle087",dbname="sardara_world",host ="db-tuna.d4science.org",port=5432)
