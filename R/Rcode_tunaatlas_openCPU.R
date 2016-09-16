@@ -291,7 +291,7 @@ plotQuantitiesInTonnes <- function(species=c(), polygons=c(), start=1946, end=20
   return (toJSON(list(OUT, poly), pretty = TRUE))
 }
 
-getCatchForSpeciesOnTimeFrame <- function(species=c(), polygons=c(), start=1946, end=2014) {
+getCatchForSpeciesOnTimeFrameLegacy <- function(species=c(), polygons=c(), start=1946, end=2014) {
   vector.is.empty <- function(x) return(length(x) ==0 )
   library (DBI)
   library ("RPostgreSQL")
@@ -376,6 +376,78 @@ getCatchForSpeciesOnTimeFrame <- function(species=c(), polygons=c(), start=1946,
 
   res <- list()
 
+  for (yearT in yearsT) {
+    t <- tuna[tuna$SeasonYear == yearT, ]
+    t <- t[ , !(names(t) %in% drops)]
+    t <- aggregate(t[,c("CatchWeightT")], by=list(t$Polygon), "sum")
+    t <- t[with(t, order(-x, Group.1)), ]
+    colnames(t)<-c("Polygon","CatchWeghtT")
+    res[[toString(yearT)]] <- t
+  }
+  return (toJSON(res, pretty = FALSE))
+}
+
+
+getCatchForSpeciesOnTimeFrame <- function(species=c(), polygons=c(), start=1946, end=2014) {
+  vector.is.empty <- function(x) return(length(x) ==0 )
+  library (DBI)
+  library ("RPostgreSQL")
+  library(dplyr)
+  library(plyr)
+  library(jsonlite)
+  
+  speciesList <- ""
+  for (sp in species) {
+    speciesList <- paste0(speciesList, "'", sp, "'", ',')
+  }
+  speciesList <- substr(speciesList, 1, nchar(speciesList)-1)
+  
+  whereConditions <- ""
+  whereConditions <- paste0(whereConditions," year <= ", end, " ")
+  whereConditions <- paste0(whereConditions," AND ", " year >= ", start, " ")
+  
+  if (speciesList != "") {
+    whereConditions <- paste0(whereConditions," AND ", " scientificname IN (", speciesList, ") ")
+  }
+  whereConditions <- paste0(whereConditions," AND ", " value > 0 ")
+  
+  if (!vector.is.empty(polygons)) {
+    whereConditions <- paste0(whereConditions," AND ST_IsValid(geom) AND (")
+    polygonList <- "";
+    for (polygon in polygons) {
+      polygonList <- paste0(polygonList, "ST_Intersects(ST_SetSRID(geom, 4326) ,ST_SetSRID(ST_GeomFromText('MULTIPOLYGON(((", polygon, ")))'), 4326)) OR ")
+    }
+    polygonList <- substr(polygonList,1,nchar(polygonList)-3)
+    print (polygonList)
+    whereConditions <- paste0(whereConditions, polygonList, ")")
+  }
+  
+  query <- "SELECT
+    year as SeasonYear,
+    value as CatchWeightT,
+    ST_AsText(geom) as Polygon
+      FROM tunaatlas_indicators.tunaatlas_catches_by_quadrant55_year_month_gear_species_flag
+  WHERE "
+  
+  query <- paste0(query, whereConditions)
+  
+  drv <- dbDriver("PostgreSQL")
+  con_sardara <- dbConnect(drv, user = "invsardara",password="fle087",dbname="sardara_world",host ="db-tuna.d4science.org",port=5432)
+  
+  tuna <- dbGetQuery(con_sardara, query)
+  dbDisconnect(con_sardara)
+  
+  if (is.data.frame(tuna) && nrow(tuna)==0) {
+    return (toJSON(tuna))
+  }
+  
+  colnames(tuna)<-c("SeasonYear","CatchWeightT","Polygon")
+  drops <-        c()
+  
+  yearsT <- sort(unique(tuna[['SeasonYear']], incomparables = FALSE))
+  
+  res <- list()
+  
   for (yearT in yearsT) {
     t <- tuna[tuna$SeasonYear == yearT, ]
     t <- t[ , !(names(t) %in% drops)]
