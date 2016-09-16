@@ -119,6 +119,20 @@ getSpecies <- function() {
   return (toJSON(ret))
 }
 
+getSpeciesSimple <- function() {
+  library(jsonlite)
+  library(plyr)
+  library(RCurl)
+  library (DBI)
+  library ("RPostgreSQL")
+  query <- "SELECT DISTINCT(species) AS name, species_scientific_name AS scientific_name
+FROM tunaatlas_indicators.tunaatlas_catches_by_quadrant55_year_month_gear_species_flag WHERE species IS NOT NULL AND species != '' ORDER BY species"
+  drv <- dbDriver("PostgreSQL")
+  con_sardara <- dbConnect(drv, user = "invsardara",password="fle087",dbname="sardara_world",host ="db-tuna.d4science.org",port=5432)
+  species <- dbGetQuery(con_sardara, query)
+  return (toJSON(species))
+}
+
 plotQuantitiesInTonnes <- function(species=c(), polygons=c(), start=1946, end=2014, chart="Bar") {
   vector.is.empty <- function(x) return(length(x) ==0 )
   library (DBI)
