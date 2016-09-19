@@ -458,7 +458,7 @@ getCatchForSpeciesOnTimeFrame <- function(species=c(), polygons=c(), start=1946,
     max_catch <- max(t$CatchWeightT, na.rm = TRUE)
     min_catch <- min(t$CatchWeightT, na.rm = TRUE)
     
-    n_col = 15
+    n_col = 7
     
     a=(1-n_col)/(sqrt(min_catch)-sqrt(max_catch))
     b=n_col-a*sqrt(max_catch) 
