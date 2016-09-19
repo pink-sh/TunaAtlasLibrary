@@ -423,10 +423,10 @@ getCatchForSpeciesOnTimeFrame <- function(species=c(), polygons=c(), start=1946,
   }
   
   query <- "SELECT
-    year as SeasonYear,
-    value as CatchWeightT,
-    ST_AsText(geom) as Polygon
-      FROM tunaatlas_indicators.tunaatlas_catches_by_quadrant55_year_month_gear_species_flag
+  year as SeasonYear,
+  value as CatchWeightT,
+  ST_AsText(geom) as Polygon
+  FROM tunaatlas_indicators.tunaatlas_catches_by_quadrant55_year_month_gear_species_flag
   WHERE "
   
   query <- paste0(query, whereConditions)
@@ -453,7 +453,18 @@ getCatchForSpeciesOnTimeFrame <- function(species=c(), polygons=c(), start=1946,
     t <- t[ , !(names(t) %in% drops)]
     t <- aggregate(t[,c("CatchWeightT")], by=list(t$Polygon), "sum")
     t <- t[with(t, order(-x, Group.1)), ]
-    colnames(t)<-c("Polygon","CatchWeghtT")
+    colnames(t)<-c("Polygon","CatchWeightT")
+    
+    max_catch <- max(t$CatchWeightT, na.rm = TRUE)
+    min_catch <- min(t$CatchWeightT, na.rm = TRUE)
+    
+    n_col = 30
+    
+    a=(1-n_col)/(sqrt(min_catch)-sqrt(max_catch))
+    b=n_col-a*sqrt(max_catch) 
+    
+    t$color <- round(a*sqrt(t$CatchWeightT)+b) 
+
     res[[toString(yearT)]] <- t
   }
   return (toJSON(res, pretty = FALSE))
