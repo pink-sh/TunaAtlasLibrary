@@ -469,3 +469,139 @@ getCatchForSpeciesOnTimeFrame <- function(species=c(), polygons=c(), start=1946,
   }
   return (toJSON(res, pretty = FALSE))
 }
+	
+plotQuantitiesInTonnesNewQuery <- function(species=c(), polygons=c(), start=1946, end=2014, chart="Bar") {
+  vector.is.empty <- function(x) return(length(x) ==0 )
+  library (DBI)
+  library ("RPostgreSQL")
+  library(rCharts)
+  library(dplyr)
+  library(plyr)
+  library(jsonlite)
+  
+  speciesList <- ""
+  for (sp in species) {
+    speciesList <- paste0(speciesList, "'", sp, "'", ',')
+  }
+  speciesList <- substr(speciesList, 1, nchar(speciesList)-1)
+  
+  whereConditions <- ""
+  whereConditions <- paste0(whereConditions," year <= ", end, " ")
+  whereConditions <- paste0(whereConditions," AND ", " year >= ", start, " ")
+  
+  if (speciesList != "") {
+    whereConditions <- paste0(whereConditions," AND ", " species.codesource_species IN (", speciesList, ") ")
+  }
+  whereConditions <- paste0(whereConditions," AND ", " value > 0 ")
+  
+  if (!vector.is.empty(polygons)) {
+    whereConditions <- paste0(whereConditions," AND ST_IsValid(AWG.geom) AND (")
+    polygonList <- "";
+    for (polygon in polygons) {
+      polygonList <- paste0(polygonList, "ST_Intersects(ST_SetSRID(AWG.geom, 4326) ,ST_SetSRID(ST_GeomFromText('MULTIPOLYGON(((", polygon, ")))'), 4326)) OR ")
+    }
+    polygonList <- substr(polygonList,1,nchar(polygonList)-3)
+    print (polygonList)
+    whereConditions <- paste0(whereConditions, polygonList, ")")
+  }
+  
+  query <- "SELECT
+    year as SeasonYear,
+    value as CatchWeightT,
+    ST_AsText(geom) as polygons
+      FROM tunaatlas_indicators.tunaatlas_catches_by_quadrant55_year_month_gear_species_flag
+  WHERE "
+  
+  query <- paste0(query, whereConditions)
+  
+  print(query)
+  
+  drv <- dbDriver("PostgreSQL")
+  con_sardara <- dbConnect(drv, user = "invsardara",password="fle087",dbname="sardara_world",host ="db-tuna.d4science.org",port=5432)
+  
+  tuna <- dbGetQuery(con_sardara, query)
+  dbDisconnect(con_sardara)
+  
+  if (is.data.frame(tuna) && nrow(tuna)==0) {
+    return (toJSON(tuna))
+  }
+  
+  poly <- count(data.frame(matrix(unlist(tuna$polygons), byrow=T)))
+  names(poly)[1] <- "polygons"
+  tuna <- subset(tuna, select = -c(polygons) )
+  
+  print(poly)
+  #colnames(tuna)<-c("ASD","SeasonYear","SeasonMonthNr","SeasonMonth","MonthNm","GearCode","Gear","TargetSpeciesCode","ScientificName","ScientificFamilyName","CatchWeightT","Species","SpeciesCode","CountryCode","Country")
+  colnames(tuna)<-c("SeasonYear","CatchWeightT")
+  
+  #myCsv <- getURL(file)
+  #myData <- read.csv(textConnection(myCsv))
+  myData <- tuna
+  if (length(species > 0)) {
+    reduced <- filter(myData, SpeciesCode %in% species)
+  } else {
+    reduced <- myData
+    species <- unique(reduced$SpeciesCode)
+  }
+  OUT <- data.frame("SeasonYear"=(start:end))
+  for (sp in species) {
+    aggr0 <- filter(reduced, SpeciesCode == sp)
+    aggr01 <- aggregate(aggr0$CatchWeightT, by=list(SeasonYear=aggr0$SeasonYear, ScientificName=aggr0$ScientificName), FUN=sum)
+    aggr02 <- transform(aggr01, SeasonYear = as.character(SeasonYear), CatchWeightT = as.numeric(x))
+    aggr03 <- filter(aggr02, SeasonYear >= start, SeasonYear <= end)
+    ifelse(lengths(aggr03, use.names = TRUE) == 0,next,1)
+    aggr03$x <- NULL
+    
+    
+    vector <- c()
+    i = 1;
+    scientificName <- ""
+    apply(OUT, 1, function(row1) {
+      yrOut = row1['SeasonYear']
+      value <- 0
+      apply(aggr03, 1, function(row2) {
+        yrIn = row2['SeasonYear']
+        
+        scientificName <<- row2['ScientificName']
+        if (!is.na(yrIn)) {
+          if (yrOut == yrIn) {
+            value <<- row2['CatchWeightT']
+          }
+        }
+      })
+      vector <<- c(vector, value)
+      i <<- i + 1
+    })
+    OUT[[scientificName]] <- vector
+  }
+  OUT <- transform(OUT, SeasonYear = as.character(SeasonYear))
+  namesOut <- c()
+  for (name in names(OUT)) {
+    if (name != 'SeasonYear') {
+      OUT[, name] = as.double(OUT[, name])
+      namesOut <- c(namesOut, name)
+    }
+  }
+  m1 <- mPlot(x = "SeasonYear", y = namesOut, type = chart, data = OUT, stacked = "TRUE")
+  m1$set(hoverCallback = "#! function(index, options, content) {
+         var row = options.data[index];
+         var tuples = [];
+         var YEAR = '';
+         for (var key in row) {
+         if (key != 'SeasonYear') {
+         tuples.push([key, parseInt(row[key])]);
+         } else {
+         year = row[key]
+         }
+         }
+         tuples.sort(function(a, b) {return b[1] - a[1]});
+         var ret = [];
+         ret.push('<div style=\"color: red;\">' + year + '</div>');
+         for (var i = 0; i < tuples.length; i++) {
+         if (i > 10) break;
+         ret.push(tuples[i][0].replace('.', ' ') + ':' + tuples[i][1]);
+         }
+         return ret.join('<br />'); } !#")
+  m1$save('output.html', standalone = TRUE)
+  return (toJSON(list(OUT, poly), pretty = TRUE))
+}
