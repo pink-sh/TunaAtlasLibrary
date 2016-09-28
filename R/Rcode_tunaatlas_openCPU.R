@@ -508,6 +508,7 @@ plotQuantitiesInTonnesNewQuery <- function(species=c(), polygons=c(), start=1946
   query <- "SELECT
     year as SeasonYear,
     value as CatchWeightT,
+    species_scientific_name as ScientificName,
     ST_AsText(geom) as polygons
       FROM tunaatlas_indicators.tunaatlas_catches_by_quadrant55_year_month_gear_species_flag
   WHERE "
@@ -532,7 +533,7 @@ plotQuantitiesInTonnesNewQuery <- function(species=c(), polygons=c(), start=1946
   
   print(poly)
   #colnames(tuna)<-c("ASD","SeasonYear","SeasonMonthNr","SeasonMonth","MonthNm","GearCode","Gear","TargetSpeciesCode","ScientificName","ScientificFamilyName","CatchWeightT","Species","SpeciesCode","CountryCode","Country")
-  colnames(tuna)<-c("SeasonYear","CatchWeightT")
+  colnames(tuna)<-c("SeasonYear","CatchWeightT", "ScientificName")
   
   #myCsv <- getURL(file)
   #myData <- read.csv(textConnection(myCsv))
