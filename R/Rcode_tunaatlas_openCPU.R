@@ -490,7 +490,7 @@ plotQuantitiesInTonnesNewQuery <- function(species=c(), polygons=c(), start=1946
   whereConditions <- paste0(whereConditions," AND ", " year >= ", start, " ")
   
   if (speciesList != "") {
-    whereConditions <- paste0(whereConditions," AND ", " species.codesource_species IN (", speciesList, ") ")
+    whereConditions <- paste0(whereConditions," AND ", " species_scientific_name IN (", speciesList, ") ")
   }
   whereConditions <- paste0(whereConditions," AND ", " value > 0 ")
   
