@@ -506,12 +506,12 @@ plotQuantitiesInTonnesNewQuery <- function(species=c(), polygons=c(), start=1946
   }
   
   query <- "SELECT
-    year as SeasonYear,
-    value as CatchWeightT,
-    species_scientific_name as ScientificName,
-    species_scientific_name as SpeciesCode,
-    ST_AsText(geom) as polygons
-      FROM tunaatlas_indicators.tunaatlas_catches_by_quadrant55_year_month_gear_species_flag
+  year as SeasonYear,
+  value as CatchWeightT,
+  species_scientific_name as ScientificName,
+  species_scientific_name as SpeciesCode,
+  ST_AsText(geom) as polygons
+  FROM tunaatlas_indicators.tunaatlas_catches_by_quadrant55_year_month_gear_species_flag
   WHERE "
   
   query <- paste0(query, whereConditions)
@@ -532,11 +532,8 @@ plotQuantitiesInTonnesNewQuery <- function(species=c(), polygons=c(), start=1946
   names(poly)[1] <- "polygons"
   tuna <- subset(tuna, select = -c(polygons) )
   
-  #colnames(tuna)<-c("ASD","SeasonYear","SeasonMonthNr","SeasonMonth","MonthNm","GearCode","Gear","TargetSpeciesCode","ScientificName","ScientificFamilyName","CatchWeightT","Species","SpeciesCode","CountryCode","Country")
   colnames(tuna)<-c("SeasonYear","CatchWeightT", "ScientificName", "SpeciesCode")
   
-  #myCsv <- getURL(file)
-  #myData <- read.csv(textConnection(myCsv))
   myData <- tuna
   if (length(species > 0)) {
     reduced <- filter(myData, SpeciesCode %in% species)
@@ -553,7 +550,7 @@ plotQuantitiesInTonnesNewQuery <- function(species=c(), polygons=c(), start=1946
       aggr03 <- filter(aggr02, SeasonYear >= start, SeasonYear <= end)
       ifelse(lengths(aggr03, use.names = TRUE) == 0,next,1)
       aggr03$x <- NULL
-
+      
       vector <- c()
       i = 1;
       scientificName <- ""
@@ -605,5 +602,21 @@ plotQuantitiesInTonnesNewQuery <- function(species=c(), polygons=c(), start=1946
          }
          return ret.join('<br />'); } !#")
   m1$save('output.html', standalone = TRUE)
-  return (toJSON(list(OUT, poly), pretty = TRUE))
+  
+  
+  poly <- poly %>% mutate( color = freq ) 
+  
+  head(poly,20)
+  max_catch <- max(poly$freq, na.rm = TRUE)
+  min_catch <- min(poly$freq, na.rm = TRUE)
+  n_col = 30
+  poly2 <- data.frame(poly[1:2], lapply(poly[3], function(CatchWeightT) {
+    a=(1-n_col)/(sqrt(min_catch)-sqrt(max_catch))
+    b=n_col-a*sqrt(max_catch) 
+    
+    return (round(a*sqrt(CatchWeightT)+b) )
+  }))
+  head(poly2,20)
+
+  return (toJSON(list(OUT, poly2), pretty = TRUE))
 }
