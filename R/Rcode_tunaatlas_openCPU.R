@@ -509,6 +509,7 @@ plotQuantitiesInTonnesNewQuery <- function(species=c(), polygons=c(), start=1946
     year as SeasonYear,
     value as CatchWeightT,
     species_scientific_name as ScientificName,
+    species_scientific_name as SpeciesCode,
     ST_AsText(geom) as polygons
       FROM tunaatlas_indicators.tunaatlas_catches_by_quadrant55_year_month_gear_species_flag
   WHERE "
@@ -531,9 +532,8 @@ plotQuantitiesInTonnesNewQuery <- function(species=c(), polygons=c(), start=1946
   names(poly)[1] <- "polygons"
   tuna <- subset(tuna, select = -c(polygons) )
   
-  print(poly)
   #colnames(tuna)<-c("ASD","SeasonYear","SeasonMonthNr","SeasonMonth","MonthNm","GearCode","Gear","TargetSpeciesCode","ScientificName","ScientificFamilyName","CatchWeightT","Species","SpeciesCode","CountryCode","Country")
-  colnames(tuna)<-c("SeasonYear","CatchWeightT", "ScientificName")
+  colnames(tuna)<-c("SeasonYear","CatchWeightT", "ScientificName", "SpeciesCode")
   
   #myCsv <- getURL(file)
   #myData <- read.csv(textConnection(myCsv))
@@ -546,34 +546,35 @@ plotQuantitiesInTonnesNewQuery <- function(species=c(), polygons=c(), start=1946
   }
   OUT <- data.frame("SeasonYear"=(start:end))
   for (sp in species) {
-    aggr0 <- filter(reduced, SpeciesCode == sp)
-    aggr01 <- aggregate(aggr0$CatchWeightT, by=list(SeasonYear=aggr0$SeasonYear, ScientificName=aggr0$ScientificName), FUN=sum)
-    aggr02 <- transform(aggr01, SeasonYear = as.character(SeasonYear), CatchWeightT = as.numeric(x))
-    aggr03 <- filter(aggr02, SeasonYear >= start, SeasonYear <= end)
-    ifelse(lengths(aggr03, use.names = TRUE) == 0,next,1)
-    aggr03$x <- NULL
-    
-    
-    vector <- c()
-    i = 1;
-    scientificName <- ""
-    apply(OUT, 1, function(row1) {
-      yrOut = row1['SeasonYear']
-      value <- 0
-      apply(aggr03, 1, function(row2) {
-        yrIn = row2['SeasonYear']
-        
-        scientificName <<- row2['ScientificName']
-        if (!is.na(yrIn)) {
-          if (yrOut == yrIn) {
-            value <<- row2['CatchWeightT']
+    if (!is.na(sp)) {
+      aggr0 <- filter(reduced, SpeciesCode == sp)
+      aggr01 <- aggregate(aggr0$CatchWeightT, by=list(SeasonYear=aggr0$SeasonYear, ScientificName=aggr0$ScientificName), FUN=sum)
+      aggr02 <- transform(aggr01, SeasonYear = as.character(SeasonYear), CatchWeightT = as.numeric(x))
+      aggr03 <- filter(aggr02, SeasonYear >= start, SeasonYear <= end)
+      ifelse(lengths(aggr03, use.names = TRUE) == 0,next,1)
+      aggr03$x <- NULL
+
+      vector <- c()
+      i = 1;
+      scientificName <- ""
+      apply(OUT, 1, function(row1) {
+        yrOut = row1['SeasonYear']
+        value <- 0
+        apply(aggr03, 1, function(row2) {
+          yrIn = row2['SeasonYear']
+          
+          scientificName <<- row2['ScientificName']
+          if (!is.na(yrIn)) {
+            if (yrOut == yrIn) {
+              value <<- row2['CatchWeightT']
+            }
           }
-        }
+        })
+        vector <<- c(vector, value)
+        i <<- i + 1
       })
-      vector <<- c(vector, value)
-      i <<- i + 1
-    })
-    OUT[[scientificName]] <- vector
+      OUT[[scientificName]] <- vector
+    }
   }
   OUT <- transform(OUT, SeasonYear = as.character(SeasonYear))
   namesOut <- c()
