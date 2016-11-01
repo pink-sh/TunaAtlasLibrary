@@ -549,7 +549,7 @@ getCatchForSpeciesOnTimeFrameDebug <- function(species=c(), polygons=c(), start=
 
     res[[toString(yearT)]] <- t
   }
-  return (toJSON(res, pretty = FALSE))
+  return (res)
 }
 	
 plotQuantitiesInTonnesNewQuery <- function(species=c(), polygons=c(), start=1946, end=2014, chart="Bar") {
